@@ -65,9 +65,9 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddDelayedMessageScheduler();
 
-    x.AddConsumer<ConvertVideoJobConsumer, ConvertVideoJobConsumerDefinition>();
+    x.AddConsumer<ConvertVideoJobConsumer>().Endpoint(e => e.Name = "My-Queue");
 
-    x.AddConsumer<TrackVideoConvertedConsumer>();
+    x.AddConsumer<TrackVideoConvertedConsumer>().Endpoint(e => e.Name = "Normal-Queue");
 
     x.AddSagaRepository<JobSaga>()
         .EntityFrameworkRepository(r =>
@@ -99,7 +99,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ServiceInstance(options, instance =>
         {
-            instance.ConfigureJobServiceEndpoints(js =>
+            instance.ConfigureJobService(js =>
             {
                 js.SagaPartitionCount = 1;
                 js.FinalizeCompleted = false; // for demo purposes, to get state
@@ -108,7 +108,7 @@ builder.Services.AddMassTransit(x =>
             });
 
             // configure the job consumer on the job service endpoints
-            instance.ConfigureEndpoints(context, f => f.Include<ConvertVideoJobConsumer>());
+            //instance.ConfigureEndpoints(context, f => f.Include<ConvertVideoJobConsumer>());
         });
 
         // Configure the remaining consumers

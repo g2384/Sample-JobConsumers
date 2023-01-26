@@ -49,25 +49,22 @@
             });
         }
 
-        [HttpPut("{path}")]
-        public async Task<IActionResult> FireAndForgetSubmitJob(string path, [FromServices] IPublishEndpoint publishEndpoint)
+        // test Consumer
+        // e.g. GET http://localhost:5000/ConvertVideo/normal/1
+        [HttpGet("normal/{path}")]
+        public async Task<IActionResult> TestConsumer(string path, [FromServices] ISendEndpointProvider sendEndpointProvider)
         {
             _logger.LogInformation("Sending job: {Path}", path);
 
             var jobId = NewId.NextGuid();
             var groupId = NewId.Next().ToString();
 
-            await publishEndpoint.Publish<SubmitJob<ConvertVideo>>(new
+            var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:Normal-Queue"));
+            await endpoint.Send(new VideoConverted()
             {
-                JobId = jobId,
-                Job = new
-                {
-                    path,
-                    groupId,
-                    Index = 0,
-                    Count = 1,
-                    Details = new VideoDetail[] { new() { Value = "first" }, new() { Value = "second" } }
-                }
+                GroupId = groupId,
+                Index = 1,
+                Count = 1
             });
 
             return Ok(new
@@ -77,8 +74,10 @@
             });
         }
 
-        [HttpPost("{count:int}")]
-        public async Task<IActionResult> SubmitJob(int count, [FromServices] IRequestClient<ConvertVideo> client)
+        // test JobConsumer
+        // e.g. GET http://localhost:5000/ConvertVideo/job/1
+        [HttpGet("job/{count:int}")]
+        public async Task<IActionResult> TestJobConsumer(int count, [FromServices] ISendEndpointProvider sendEndpointProvider)
         {
             var jobIds = new List<Guid>(count);
 
@@ -88,15 +87,16 @@
             {
                 var path = NewId.Next() + ".txt";
 
-                Response<JobSubmissionAccepted> response = await client.GetResponse<JobSubmissionAccepted>(new
+                var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri($"queue:My-Queue"));
+                await endpoint.Send(new ConvertVideo()
                 {
-                    path,
-                    groupId,
+                    Path = path,
+                    GroupId = groupId,
                     Index = i,
-                    count
+                    Count = count
                 });
 
-                jobIds.Add(response.Message.JobId);
+                jobIds.Add(Guid.NewGuid());
             }
 
             return Ok(new { jobIds });
