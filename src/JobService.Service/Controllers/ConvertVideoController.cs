@@ -87,7 +87,7 @@
             {
                 var path = NewId.Next() + ".txt";
 
-                var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri($"queue:My-Queue"));
+                var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri($"queue:Job-Queue"));
                 await endpoint.Send(new ConvertVideo()
                 {
                     Path = path,
