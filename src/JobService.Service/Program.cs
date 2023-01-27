@@ -99,7 +99,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ServiceInstance(options, instance =>
         {
-            instance.ConfigureJobService(js =>
+            instance.ConfigureJobServiceEndpoints(js =>
             {
                 js.SagaPartitionCount = 1;
                 js.FinalizeCompleted = false; // for demo purposes, to get state
