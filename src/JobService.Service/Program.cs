@@ -65,6 +65,7 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddDelayedMessageScheduler();
 
+    // if message keeps getting sent to skipped queue, 1. because consumer is not available, 2. because the queue is corrupted, give it a new name.
     x.AddConsumer<ConvertVideoJobConsumer>().Endpoint(e => e.Name = "Job-Queue");
 
     x.AddConsumer<TrackVideoConvertedConsumer>();
