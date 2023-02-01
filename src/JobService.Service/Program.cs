@@ -93,6 +93,21 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+        // configure RabbitMQ host
+        if (true)
+        {
+            var host = "internal.test.com";
+            ushort port = 5672;
+            var virtualHost = "My_Host"; // use "/" or customised virtual host
+            var username = "User123"; // username and password in ResQ -> Admin -> Users
+            var password = "User123";
+            cfg.Host(host, port, virtualHost, hst =>
+            {
+                hst.Username(username);
+                hst.Password(password);
+            });
+        }
+
         cfg.UseDelayedMessageScheduler();
 
         var options = new ServiceInstanceOptions()
