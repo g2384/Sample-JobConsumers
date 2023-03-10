@@ -20,11 +20,9 @@
 
         public async Task Run(JobContext<ConvertVideo> context)
         {
-            var rng = new Random();
+            var message = context.Job;
 
-            var variance = TimeSpan.FromMilliseconds(rng.Next(8399, 28377));
-
-            _logger.LogInformation("Converting Video: {GroupId} {Path}", context.Job.GroupId, context.Job.Path);
+            _logger.LogInformation("Converting Video: {GroupId} {Path} {Index}/{Count}", message.GroupId, message.Path, message.Index, message.Count);
 
             var endpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:Normal-Queue"));
             await endpoint.Send(new VideoConverted()
@@ -34,7 +32,7 @@
                 Index = context.Job.Index
             });
 
-            _logger.LogInformation("Converted Video: {GroupId} {Path}", context.Job.GroupId, context.Job.Path);
+            _logger.LogInformation("Converting Video: {GroupId} {Path} {Index}/{Count}", message.GroupId, message.Path, message.Index, message.Count);
         }
     }
 }

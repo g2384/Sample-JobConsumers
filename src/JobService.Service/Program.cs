@@ -46,20 +46,21 @@ builder.Services.AddOpenApiDocument(cfg => cfg.PostProcess = d =>
     };
 });
 
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+// for Postgres
+//AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-builder.Services.AddDbContext<JobServiceSagaDbContext>(optionsBuilder =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("JobService");
+//builder.Services.AddDbContext<JobServiceSagaDbContext>(optionsBuilder =>
+//{
+//    var connectionString = builder.Configuration.GetConnectionString("JobService");
 
-    optionsBuilder.UseNpgsql(connectionString, m =>
-    {
-        m.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
-        m.MigrationsHistoryTable($"__{nameof(JobServiceSagaDbContext)}");
-    });
-});
+//    optionsBuilder.UseNpgsql(connectionString, m =>
+//    {
+//        m.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
+//        m.MigrationsHistoryTable($"__{nameof(JobServiceSagaDbContext)}");
+//    });
+//});
 
-builder.Services.AddHostedService<MigrationHostedService<JobServiceSagaDbContext>>();
+//builder.Services.AddHostedService<MigrationHostedService<JobServiceSagaDbContext>>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -71,24 +72,30 @@ builder.Services.AddMassTransit(x =>
 
     x.AddConsumer<TrackVideoConvertedConsumer>();
 
-    x.AddSagaRepository<JobSaga>()
-        .EntityFrameworkRepository(r =>
-        {
-            r.ExistingDbContext<JobServiceSagaDbContext>();
-            r.UsePostgres();
-        });
-    x.AddSagaRepository<JobTypeSaga>()
-        .EntityFrameworkRepository(r =>
-        {
-            r.ExistingDbContext<JobServiceSagaDbContext>();
-            r.UsePostgres();
-        });
-    x.AddSagaRepository<JobAttemptSaga>()
-        .EntityFrameworkRepository(r =>
-        {
-            r.ExistingDbContext<JobServiceSagaDbContext>();
-            r.UsePostgres();
-        });
+    // for Postgres
+    //x.AddSagaRepository<JobSaga>()
+    //    .EntityFrameworkRepository(r =>
+    //    {
+    //        r.ExistingDbContext<JobServiceSagaDbContext>();
+    //        r.UsePostgres();
+    //    });
+    //x.AddSagaRepository<JobTypeSaga>()
+    //    .EntityFrameworkRepository(r =>
+    //    {
+    //        r.ExistingDbContext<JobServiceSagaDbContext>();
+    //        r.UsePostgres();
+    //    });
+    //x.AddSagaRepository<JobAttemptSaga>()
+    //    .EntityFrameworkRepository(r =>
+    //    {
+    //        r.ExistingDbContext<JobServiceSagaDbContext>();
+    //        r.UsePostgres();
+    //    });
+
+    // or use in memory
+    x.AddSagaRepository<JobSaga>().InMemoryRepository();
+    x.AddSagaRepository<JobTypeSaga>().InMemoryRepository();
+    x.AddSagaRepository<JobAttemptSaga>().InMemoryRepository();
 
     x.SetKebabCaseEndpointNameFormatter();
 
@@ -100,7 +107,7 @@ builder.Services.AddMassTransit(x =>
             var host = "internal.test.com";
             ushort port = 5672;
             var virtualHost = "My_Host"; // use "/" or customised virtual host
-            var username = "User123"; // username and password in ResQ -> Admin -> Users
+            var username = "User123"; // username and password in RabbitMQ -> Admin -> Users
             var password = "User123";
             cfg.Host(host, port, virtualHost, hst =>
             {
@@ -135,6 +142,8 @@ builder.Services.AddMassTransit(x =>
         });
     });
 });
+
+builder.Services.AddHostedService<JobSubmissionService>(); // submit messages automatically
 
 builder.Services.AddOptions<MassTransitHostOptions>()
     .Configure(options =>
